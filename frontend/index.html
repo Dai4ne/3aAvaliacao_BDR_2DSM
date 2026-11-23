@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Altave OS</title>
+  </head>
+  <body class="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+    <main class="w-full max-w-sm rounded-xl bg-white p-8 shadow">
+      <h1 class="text-2xl font-bold text-slate-800">Altave OS</h1>
+      <p class="mb-6 text-sm text-slate-500">Gestão de ordens de serviço</p>
+
+      <form id="login" class="space-y-4">
+        <input
+          name="email"
+          type="email"
+          required
+          placeholder="E-mail"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <input
+          name="senha"
+          type="password"
+          required
+          placeholder="Senha"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button class="w-full rounded-lg bg-blue-600 py-2 font-medium text-white hover:bg-blue-700">
+          Entrar
+        </button>
+        <p id="msg" class="text-center text-sm text-red-600"></p>
+      </form>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
