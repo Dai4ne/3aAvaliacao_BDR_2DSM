@@ -174,8 +174,8 @@ async function listar(tipo: string, atual: () => boolean) {
       const ordens = await api<Ordem[]>('/os');
       if (atual()) tabela(['Título', 'Time', 'Pessoa responsável', 'Prazo', 'Prioridade', 'Status', 'Anexos', 'Ações'], ordens.map((o) => [
         detalhesOS(o), o.time_nome, o.responsavel_nome ?? '—', o.data_limite.split('-').reverse().join('/'),
-        ({ media: 'média', critica: 'crítica' } as Record<string, string>)[o.prioridade] ?? o.prioridade,
-        o.os_status === 'concluida' ? 'concluída' : o.os_status, botaoAnexos(o.os_id),
+        selo(({ media: 'média', critica: 'crítica' } as Record<string, string>)[o.prioridade] ?? o.prioridade, 'prioridade', o.prioridade),
+        selo(o.os_status === 'concluida' ? 'concluída' : o.os_status, 'status', o.os_status), botaoAnexos(o.os_id),
         acoesRegistro('/os/' + o.os_id, o.os_titulo, podeEditarOS(o) ? () => editarOrdem(o.os_id) : undefined, podeGerirOrdem(o)),
       ]));
     }
@@ -183,6 +183,15 @@ async function listar(tipo: string, atual: () => boolean) {
     if (atual()) registros.textContent = '';
     throw err;
   }
+}
+
+function selo(texto: string, tipo: 'status' | 'prioridade', valor: string) {
+  const el = document.createElement('span');
+  el.className = 'selo';
+  el.dataset.tipo = tipo;
+  el.dataset.valor = valor;
+  el.textContent = texto;
+  return el;
 }
 
 function detalhesOS(ordem: Ordem) {
@@ -456,6 +465,17 @@ botaoEntrar.disabled = true;
 api<Usuario>('/auth/me').then(iniciarSessao).catch((err: Error & { status?: number }) => {
   if (err.status !== 401) porId('msg').textContent = err.message;
 }).finally(() => { botaoEntrar.disabled = false; });
+
+// Perfis de teste: preenchem o formulário e entram com um clique.
+// Para esconder o bloco (ex.: em produção), defina VITE_PERFIS_DEMO=false no frontend/.env
+if (import.meta.env.VITE_PERFIS_DEMO === 'false') document.getElementById('perfis')?.remove();
+document.querySelectorAll<HTMLButtonElement>('#perfis [data-email]').forEach((perfil) => {
+  perfil.onclick = () => {
+    (loginForm.elements.namedItem('email') as HTMLInputElement).value = perfil.dataset.email ?? '';
+    (loginForm.elements.namedItem('senha') as HTMLInputElement).value = perfil.dataset.senha ?? '';
+    loginForm.requestSubmit();
+  };
+});
 const editor = porId<HTMLDialogElement>('editor');
 const confirmacaoExclusao = porId<HTMLDialogElement>('confirmar-exclusao');
 const editorForm = porId<HTMLFormElement>('editor-form');

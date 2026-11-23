@@ -4,23 +4,55 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Altave OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
   <body>
     <main>
-      <section id="entrada" class="cartao entrada">
-        <h1>Altave OS</h1>
-        <p>Gestão de ordens de serviço</p>
-        <form id="login">
-          <label>E-mail<input name="email" type="email" autocomplete="username" required /></label>
-          <label>Senha<input name="senha" type="password" autocomplete="current-password" required /></label>
-          <button>Entrar</button>
-          <p id="msg" role="status"></p>
-        </form>
+      <section id="entrada" class="entrada">
+        <div class="marca">
+          <p class="logo">Altave OS</p>
+          <h2>Cada ordem de serviço, do pedido à conclusão.</h2>
+          <ol class="etapas" aria-label="Etapas de uma OS">
+            <li><span class="selo" data-tipo="status" data-valor="aberta">aberta</span></li>
+            <li><span class="selo" data-tipo="status" data-valor="em andamento">em andamento</span></li>
+            <li><span class="selo" data-tipo="status" data-valor="teste">teste</span></li>
+            <li><span class="selo" data-tipo="status" data-valor="concluida">concluída</span></li>
+          </ol>
+        </div>
+        <div class="acesso">
+          <h1>Entrar</h1>
+          <p>Use o e-mail e a senha da sua conta.</p>
+          <form id="login">
+            <label>E-mail<input name="email" type="email" autocomplete="username" required /></label>
+            <label>Senha<input name="senha" type="password" autocomplete="current-password" required /></label>
+            <button>Entrar</button>
+            <p id="msg" role="status"></p>
+          </form>
+          <div id="perfis" class="perfis">
+            <h2>Entrar com um perfil de teste</h2>
+            <div class="perfis-lista">
+              <button type="button" class="perfil" data-email="gestor@altave.test" data-senha="Gestor123!">
+                <strong>Gestor</strong><span>Administra usuários, times e OS</span>
+              </button>
+              <button type="button" class="perfil" data-email="comercial@altave.test" data-senha="Comercial123!">
+                <strong>Comercial</strong><span>Abre e acompanha as OS</span>
+              </button>
+              <button type="button" class="perfil" data-email="producao@altave.test" data-senha="Producao123!">
+                <strong>Produção</strong><span>Líder do time Produção</span>
+              </button>
+              <button type="button" class="perfil" data-email="software@altave.test" data-senha="Software123!">
+                <strong>Software</strong><span>Líder do time Software</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="app" hidden>
         <nav aria-label="Cadastros">
-          <strong>Altave OS</strong>
+          <strong class="logo">Altave OS</strong>
           <a href="#usuarios" data-gestao>Novo usuário</a>
           <a href="#times" data-gestao>Novo time</a>
           <a href="#os" data-encaminhamento>Nova OS</a>
@@ -69,8 +101,7 @@
 
         <section id="os" class="cartao cartao-os" hidden>
           <header>
-            <div class="icone" aria-hidden="true">📋</div>
-            <div><h1>Nova Ordem de Serviço</h1><p>Abra uma solicitação para o time responsável.</p></div>
+            <div><h1>Nova ordem de serviço</h1><p>Abra uma solicitação para o time responsável.</p></div>
           </header>
           <p class="obrigatorios">Campos marcados com <b>*</b> são obrigatórios.</p>
           <form id="form-os">
@@ -92,10 +123,12 @@
           </form>
         </section>
 
-        <section id="lista" class="cartao" hidden>
-          <h1 id="titulo-lista"></h1>
+        <section id="lista" class="cartao cartao-lista" hidden>
+          <header class="cabecalho-lista">
+            <h1 id="titulo-lista"></h1>
+            <a id="novo-registro" class="botao" href="#os">Novo cadastro</a>
+          </header>
           <div class="tabela" id="registros"></div>
-          <div class="acoes"><a id="novo-registro" class="botao" href="#os">Novo cadastro</a></div>
         </section>
       </section>
     </main>
