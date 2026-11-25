@@ -5,33 +5,120 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Altave OS</title>
   </head>
-  <body class="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-    <main class="w-full max-w-sm rounded-xl bg-white p-8 shadow">
-      <h1 class="text-2xl font-bold text-slate-800">Altave OS</h1>
-      <p class="mb-6 text-sm text-slate-500">Gestão de ordens de serviço</p>
+  <body>
+    <main>
+      <section id="entrada" class="cartao entrada">
+        <h1>Altave OS</h1>
+        <p>Gestão de ordens de serviço</p>
+        <form id="login">
+          <label>E-mail<input name="email" type="email" autocomplete="username" required /></label>
+          <label>Senha<input name="senha" type="password" autocomplete="current-password" required /></label>
+          <button>Entrar</button>
+          <p id="msg" role="status"></p>
+        </form>
+      </section>
 
-      <form id="login" class="space-y-4">
-        <input
-          name="email"
-          type="email"
-          required
-          placeholder="E-mail"
-          class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          name="senha"
-          type="password"
-          required
-          placeholder="Senha"
-          class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button class="w-full rounded-lg bg-blue-600 py-2 font-medium text-white hover:bg-blue-700">
-          Entrar
-        </button>
-        <p id="msg" class="text-center text-sm text-red-600"></p>
-      </form>
+      <section id="app" hidden>
+        <nav aria-label="Cadastros">
+          <strong>Altave OS</strong>
+          <a href="#usuarios" data-gestao>Novo usuário</a>
+          <a href="#times" data-gestao>Novo time</a>
+          <a href="#os" data-encaminhamento>Nova OS</a>
+          <a href="#lista-os">Ordens de serviço</a>
+          <button id="sair" class="secundario">Sair</button>
+        </nav>
+
+        <p id="feedback" role="status" hidden></p>
+
+        <section id="usuarios" class="cartao" hidden>
+          <h1>Novo usuário</h1>
+          <form id="form-usuarios">
+            <div class="campos">
+              <label>Nome <b>*</b><input name="nome" required minlength="2" maxlength="100" /></label>
+              <label>Email <b>*</b><input name="email" type="email" required maxlength="150" autocomplete="off" /></label>
+              <div>
+                <label for="nova-senha">Senha <b>*</b></label>
+                <div class="senha">
+                  <input id="nova-senha" name="senha" type="password" required minlength="6" maxlength="72" autocomplete="new-password" />
+                  <button id="mostrar-senha" type="button" class="secundario" aria-controls="nova-senha">Mostrar</button>
+                </div>
+              </div>
+              <label>Cargo do usuário <b>*</b><select name="cargo" required></select></label>
+              <label>Time do usuário <span>(opcional)</span><select name="time_id" id="time-usuario"></select></label>
+            </div>
+            <div class="acoes"><button>Cadastrar</button><a class="secundario" href="#lista-usuarios">Visualizar usuários</a></div>
+          </form>
+        </section>
+
+        <section id="times" class="cartao" hidden>
+          <h1>Novo time</h1>
+          <form id="form-times">
+            <div class="campos">
+              <label>Nome do time <b>*</b><input name="nome_time" required minlength="2" maxlength="100" /></label>
+              <label>Equipe relacionada <b>*</b><select name="departamento" required></select></label>
+              <label>Pessoa responsável <b>*</b><select name="responsavel_id" id="responsavel" required></select></label>
+              <div>
+                <label for="membro">Pessoas vinculadas</label>
+                <select id="membro"></select>
+                <div id="membros" aria-live="polite"></div>
+              </div>
+            </div>
+            <div class="acoes"><button>Cadastrar</button><a class="secundario" href="#lista-times">Visualizar times</a></div>
+          </form>
+        </section>
+
+        <section id="os" class="cartao cartao-os" hidden>
+          <header>
+            <div class="icone" aria-hidden="true">📋</div>
+            <div><h1>Nova Ordem de Serviço</h1><p>Abra uma solicitação para o time responsável.</p></div>
+          </header>
+          <p class="obrigatorios">Campos marcados com <b>*</b> são obrigatórios.</p>
+          <form id="form-os">
+            <div class="campos campos-os">
+              <label>Título da solicitação <b>*</b><input name="os_titulo" required minlength="3" maxlength="150" /></label>
+              <label>Time responsável <b>*</b><select name="id_time_responsavel" id="time-os" required></select></label>
+              <label>Pessoa responsável <b id="responsavel-os-obrigatorio" hidden>*</b><select name="id_usuario_responsavel" id="responsavel-os"></select></label>
+              <label>Prazo desejado <b>*</b><input name="data_limite" type="date" required /></label>
+              <label>Prioridade <b>*</b>
+                <select name="prioridade" required>
+                  <option value="baixa">Baixa</option><option value="media">Média</option>
+                  <option value="alta">Alta</option><option value="critica">Crítica</option>
+                </select>
+              </label>
+              <label class="linha">Descrição <b>*</b><textarea name="os_descricao" required placeholder="Descreva a solicitação e inclua informações relevantes."></textarea></label>
+              <label class="linha">Anexos <span>(opcional, até 10 arquivos e 2 MB no total)</span><input type="file" name="anexos" multiple /></label>
+            </div>
+            <div class="acoes direita"><a class="secundario" href="#lista-os">Voltar</a><button>Solicitar O.S.</button></div>
+          </form>
+        </section>
+
+        <section id="lista" class="cartao" hidden>
+          <h1 id="titulo-lista"></h1>
+          <div class="tabela" id="registros"></div>
+          <div class="acoes"><a id="novo-registro" class="botao" href="#os">Novo cadastro</a></div>
+        </section>
+      </section>
     </main>
-
+    <dialog id="editor" class="cartao editor" aria-labelledby="editor-titulo">
+      <h1 id="editor-titulo"></h1>
+      <form id="editor-form">
+        <div id="editor-campos" class="campos"></div>
+        <p id="editor-erro" role="alert"></p>
+        <div class="acoes direita">
+          <button id="editor-fechar" type="button" class="secundario">Fechar</button>
+          <button id="editor-salvar" type="submit">Salvar</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="confirmar-exclusao" class="cartao editor confirmacao" aria-labelledby="exclusao-titulo" aria-describedby="exclusao-mensagem exclusao-aviso">
+      <h1 id="exclusao-titulo"></h1>
+      <p id="exclusao-mensagem">Você está prestes a excluir <strong id="exclusao-registro"></strong>.</p>
+      <p id="exclusao-aviso">Esta ação é permanente.</p>
+      <form method="dialog" class="acoes direita">
+        <button value="cancelar" class="secundario" autofocus>Cancelar</button>
+        <button value="excluir" class="botao-excluir">Excluir definitivamente</button>
+      </form>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

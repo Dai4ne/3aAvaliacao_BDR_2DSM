@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { authenticate, requireCargo } from '../../middlewares/auth';
-import * as service from './usuarios.service';
+import { authenticate, requireCargo } from '../auth';
+import * as service from '../services/usuarios.service';
 
 export const usuariosRouter = Router();
 usuariosRouter.use(authenticate);
@@ -23,13 +23,16 @@ const criarSchema = z.object({
   nome: z.string().min(2).max(100),
   email: z.string().email().max(150),
   senha: z.string().min(6).max(72),
-  cargo: z.enum(CARGOS),
+  cargo: z.enum(['gestor', 'comercial', 'producao', 'software']),
   time_id: z.number().int().positive().nullish(), // opcional
 });
 
 const atualizarSchema = z.object({
   nome: z.string().min(2).max(100).optional(),
+  email: z.string().email().max(150).optional(),
+  senha: z.string().min(6).max(72).optional(),
   cargo: z.enum(CARGOS).optional(),
+  time_id: z.number().int().positive().nullable().optional(),
 });
 
 const listarSchema = z.object({
@@ -59,7 +62,7 @@ usuariosRouter.patch('/:id', requireCargo('superusuario', 'gestor'), async (req,
   res.json(await service.atualizarUsuario(id, atualizarSchema.parse(req.body)));
 });
 
-usuariosRouter.delete('/:id', requireCargo('superusuario'), async (req, res) => {
+usuariosRouter.delete('/:id', requireCargo('superusuario', 'gestor'), async (req, res) => {
   const { id } = idParam.parse(req.params);
   await service.removerUsuario(id);
   res.status(204).send();

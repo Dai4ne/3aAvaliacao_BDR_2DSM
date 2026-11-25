@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { pool } from '../../config/db';
-import { AppError } from '../../utils/AppError';
-import type { Cargo } from '../../types/express';
+import { pool } from '../db';
+import { AppError } from '../AppError';
+import type { Cargo } from '../express';
 
 const SAFE_COLUMNS = 'id_usuario, nome, email, cargo, time_id';
 
@@ -51,28 +51,31 @@ export async function buscarUsuario(id: number) {
   return rows[0];
 }
 
-export async function atualizarUsuario(id: number, data: { nome?: string; cargo?: Cargo }) {
-  await buscarUsuario(id);
+export async function atualizarUsuario(id: number, data: Partial<NovoUsuario>) {
   const entries = Object.entries(data).filter(([, v]) => v !== undefined);
   if (!entries.length) throw new AppError(400, 'Nenhum campo para atualizar');
+  const valores = await Promise.all(entries.map(([campo, valor]) =>
+    campo === 'senha' ? bcrypt.hash(String(valor), 10) : valor));
 
-  await pool.query(
-    `UPDATE usuario SET ${entries.map(([k]) => `${k} = ?`).join(', ')} WHERE id_usuario = ?`,
-    [...entries.map(([, v]) => v), id],
+  const [result] = await pool.query<ResultSetHeader>(
+    `UPDATE usuario u SET ${entries.map(([k]) => `${k} = ?`).join(', ')} WHERE id_usuario = ?
+     AND (? = 0 OR time_id <=> ? OR NOT EXISTS (SELECT 1 FROM \`time\` t WHERE t.responsavel_id = u.id_usuario))`,
+    [...valores, id, data.time_id === undefined ? 0 : 1, data.time_id ?? null],
   );
+  if (!result.affectedRows) {
+    await buscarUsuario(id);
+    throw new AppError(409, 'Troque o responsável do time antes de mover este usuário.');
+  }
   return buscarUsuario(id);
 }
 
 export async function removerUsuario(id: number) {
-  await buscarUsuario(id);
-
-  const [lider] = await pool.query<RowDataPacket[]>(
-    'SELECT id_time FROM `time` WHERE responsavel_id = ?',
-    [id],
+  const [result] = await pool.execute<ResultSetHeader>(
+    'DELETE FROM usuario WHERE id_usuario = ? AND NOT EXISTS (SELECT 1 FROM `time` WHERE responsavel_id = ?)',
+    [id, id],
   );
-  if (lider.length) {
+  if (!result.affectedRows) {
+    await buscarUsuario(id);
     throw new AppError(409, 'Usuário é responsável por um time. Troque o responsável antes de remover.');
   }
-
-  await pool.query('DELETE FROM usuario WHERE id_usuario = ?', [id]);
 }

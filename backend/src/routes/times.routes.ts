@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { authenticate, requireCargo } from '../../middlewares/auth';
-import * as service from './times.service';
+import { authenticate, requireCargo } from '../auth';
+import * as service from '../services/times.service';
 
 export const timesRouter = Router();
 timesRouter.use(authenticate);
@@ -25,7 +25,12 @@ const atualizarSchema = z.object({
   nome_time: z.string().min(2).max(100).optional(),
   email_time: z.string().email().max(150).nullable().optional(),
   departamento: z.string().min(2).max(100).optional(),
-});
+  usuario_ids: z.array(z.number().int().positive()).min(1).optional(),
+  responsavel_id: z.number().int().positive().optional(),
+}).refine(
+  (data) => (data.usuario_ids === undefined) === (data.responsavel_id === undefined),
+  'Informe os membros e o responsável juntos',
+);
 
 const gestao = requireCargo('superusuario', 'gestor');
 
@@ -46,6 +51,12 @@ timesRouter.post('/', gestao, async (req, res) => {
 timesRouter.patch('/:id', gestao, async (req, res) => {
   const { id } = idParam.parse(req.params);
   res.json(await service.atualizarTime(id, atualizarSchema.parse(req.body)));
+});
+
+timesRouter.delete('/:id', gestao, async (req, res) => {
+  const { id } = idParam.parse(req.params);
+  await service.removerTime(id);
+  res.status(204).end();
 });
 
 // POST /times/:id/membros  { usuario_id }

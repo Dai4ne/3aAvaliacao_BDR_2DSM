@@ -1,5 +1,5 @@
-import { pool } from './config/db';
-import { env } from './config/env';
+import { pool } from './db';
+import { env } from './env';
 import { app } from './app';
 
 async function main() {

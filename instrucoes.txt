@@ -7,11 +7,10 @@ COMO RODAR O PROJETO (Altave OS)
    mysql -u root -p < script.sql
 
 3. Variáveis de ambiente:
-   backend/.env.example  -> copiar para backend/.env  (senha do MySQL e JWT_SECRET)
+   backend/.env.example  -> copiar para backend/.env  (configuração do MySQL)
    frontend/.env.example -> copiar para frontend/.env
 
-4. Criar o primeiro superusuário:
-   npm run seed:admin -- admin@altave.com.br SenhaForte123 "Admin"
+4. Entrar com uma das contas iniciais listadas no README.
 
 5. Subir a aplicação (dois terminais):
    npm run dev:backend     -> http://localhost:3000

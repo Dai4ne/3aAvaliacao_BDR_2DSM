@@ -1,6 +1,6 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { pool } from '../../config/db';
-import { AppError } from '../../utils/AppError';
+import { pool } from '../db';
+import { AppError } from '../AppError';
 
 export interface NovoTime {
   nome_time: string;
@@ -86,17 +86,47 @@ export async function buscarTime(id: number) {
 
 export async function atualizarTime(
   id: number,
-  data: { nome_time?: string; email_time?: string | null; departamento?: string },
+  data: Partial<NovoTime>,
 ) {
-  await buscarTime(id);
-  const entries = Object.entries(data).filter(([, v]) => v !== undefined);
-  if (!entries.length) throw new AppError(400, 'Nenhum campo para atualizar');
+  const { usuario_ids, ...campos } = data;
+  const entries = Object.entries(campos).filter(([, v]) => v !== undefined);
+  if (!entries.length && !usuario_ids) throw new AppError(400, 'Nenhum campo para atualizar');
 
-  await pool.query(
-    `UPDATE \`time\` SET ${entries.map(([k]) => `${k} = ?`).join(', ')} WHERE id_time = ?`,
-    [...entries.map(([, v]) => v), id],
-  );
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [times] = await conn.execute<RowDataPacket[]>('SELECT id_time FROM `time` WHERE id_time = ? FOR UPDATE', [id]);
+    if (!times.length) throw new AppError(404, 'Time não encontrado');
+    if (usuario_ids) {
+      const ids = [...new Set(usuario_ids)];
+      if (!ids.includes(data.responsavel_id!)) throw new AppError(400, 'O responsável precisa ser membro do time');
+      const [usuarios] = await conn.query<RowDataPacket[]>(
+        'SELECT id_usuario, time_id FROM usuario WHERE id_usuario IN (?) FOR UPDATE', [ids],
+      );
+      if (usuarios.length !== ids.length) throw new AppError(400, 'Algum usuário informado não existe');
+      if (usuarios.some((u) => u.time_id !== null && u.time_id !== id)) {
+        throw new AppError(409, 'Algum usuário informado já pertence a outro time');
+      }
+      await conn.query('UPDATE usuario SET time_id = NULL WHERE time_id = ? AND id_usuario NOT IN (?)', [id, ids]);
+      await conn.query('UPDATE usuario SET time_id = ? WHERE id_usuario IN (?)', [id, ids]);
+    }
+    if (entries.length) await conn.query(
+      `UPDATE \`time\` SET ${entries.map(([k]) => `${k} = ?`).join(', ')} WHERE id_time = ?`,
+      [...entries.map(([, v]) => v), id],
+    );
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
   return buscarTime(id);
+}
+
+export async function removerTime(id: number) {
+  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM `time` WHERE id_time = ?', [id]);
+  if (!result.affectedRows) throw new AppError(404, 'Time não encontrado');
 }
 
 export async function adicionarMembro(timeId: number, usuarioId: number) {
@@ -109,7 +139,10 @@ export async function adicionarMembro(timeId: number, usuarioId: number) {
   if (!rows[0]) throw new AppError(404, 'Usuário não encontrado');
   if (rows[0].time_id !== null) throw new AppError(409, 'Usuário já pertence a um time');
 
-  await pool.query('UPDATE usuario SET time_id = ? WHERE id_usuario = ?', [timeId, usuarioId]);
+  const [result] = await pool.execute<ResultSetHeader>(
+    'UPDATE usuario SET time_id = ? WHERE id_usuario = ? AND time_id IS NULL', [timeId, usuarioId],
+  );
+  if (!result.affectedRows) throw new AppError(409, 'Usuário já pertence a um time');
   return buscarTime(timeId);
 }
 
@@ -123,7 +156,11 @@ export async function removerMembro(timeId: number, usuarioId: number) {
     throw new AppError(409, 'Não é possível remover o responsável. Defina outro responsável antes.');
   }
 
-  await pool.query('UPDATE usuario SET time_id = NULL WHERE id_usuario = ?', [usuarioId]);
+  const [result] = await pool.execute<ResultSetHeader>(
+    'UPDATE usuario u JOIN `time` t ON u.time_id = t.id_time SET u.time_id = NULL WHERE u.id_usuario = ? AND t.id_time = ? AND NOT (t.responsavel_id <=> u.id_usuario)',
+    [usuarioId, timeId],
+  );
+  if (!result.affectedRows) throw new AppError(409, 'O vínculo mudou. Atualize o time e tente novamente.');
   return buscarTime(timeId);
 }
 
@@ -134,6 +171,10 @@ export async function trocarResponsavel(timeId: number, usuarioId: number) {
     throw new AppError(400, 'O novo responsável precisa ser membro do time');
   }
 
-  await pool.query('UPDATE `time` SET responsavel_id = ? WHERE id_time = ?', [usuarioId, timeId]);
+  const [result] = await pool.execute<ResultSetHeader>(
+    'UPDATE `time` t JOIN usuario u ON u.time_id = t.id_time SET t.responsavel_id = u.id_usuario WHERE u.id_usuario = ? AND t.id_time = ?',
+    [usuarioId, timeId],
+  );
+  if (!result.affectedRows) throw new AppError(409, 'O vínculo mudou. Atualize o time e tente novamente.');
   return buscarTime(timeId);
 }

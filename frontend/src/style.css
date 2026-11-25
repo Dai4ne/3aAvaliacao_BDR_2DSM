@@ -1,1 +1,100 @@
 @import 'tailwindcss';
+
+:root { 
+    font-family: Arial, 
+    sans-serif; 
+    color: #111827; 
+    background: #f8f8f8; }
+
+[hidden] { display: none !important; }
+
+main { width: min(88%, 1400px); 
+    margin: 32px auto; 
+}
+
+nav { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 16px 24px; 
+    align-items: center; 
+    margin-bottom: 20px; 
+    color: #345b9c; 
+}
+
+nav a[aria-current] { 
+    text-decoration: underline; 
+    text-underline-offset: 5px; 
+}
+
+nav button { margin-left: auto; }
+
+.cartao { 
+    background: white; 
+    border: 1px solid #d7d7d7; 
+    border-radius: 14px; 
+    padding: clamp(20px, 3vw, 36px); 
+}
+
+.entrada { 
+    max-width: 420px; 
+    margin: 12vh auto 0; 
+}
+
+.entrada form { 
+    display: grid;
+    gap: 14px; 
+    margin-top: 20px; 
+}
+
+h1 { font-size: 20px; margin: 0 0 24px; }
+p, label, span { color: #58667a; }
+label { font-size: 14px; font-weight: 600; }
+label span { font-weight: 400; }
+b { color: #b52331; }
+.campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.campos-os { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.linha { grid-column: 1 / -1; }
+input, select, textarea { display: block; width: 100%; min-height: 44px; background: #fff; color: #111827; font: inherit; font-weight: 400; border: 1px solid #d7d7d7; border-radius: 9px; margin-top: 8px; padding: 10px 12px; }
+textarea { min-height: 122px; resize: vertical; }
+input[type=file] { background: #e7eefb; color: #294d89; border-color: #a8bbdf; }
+input[type=file]::file-selector-button { margin-right: 12px; font-weight: 600; cursor: pointer; }
+:focus-visible { outline: 2px solid #345fae; outline-offset: 2px; }
+.acoes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.direita { justify-content: end; }
+button, .botao, .secundario { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 20px; border: 1px solid transparent; border-radius: 8px; font-weight: 500; cursor: pointer; }
+button, .botao { background: #2853a1; color: white; }
+button:hover, .botao:hover { background: #204582; }
+.secundario { background: white; border-color: #d7d7d7; color: #345b9c; }
+.secundario:hover { background: #edf2fb; }
+button:disabled { opacity: .6; cursor: wait; }
+.senha { position: relative; }
+.senha input { padding-right: 90px; }
+.senha button { position: absolute; right: 4px; top: 4px; padding: 3px 9px; min-height: 36px; font-size: 13px; }
+#membros { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+#membros button { min-height: 32px; padding: 3px 9px; }
+.cartao-os header { display: flex; align-items: center; gap: 14px; }
+.cartao-os h1 { font-size: clamp(22px, 3vw, 28px); font-weight: 700; margin: 0; }
+.icone { display: grid; place-items: center; width: 54px; height: 54px; flex: 0 0 54px; border-radius: 50%; background: #e6edfb; }
+.obrigatorios { margin: 18px 0 24px; font-size: 13px; }
+#feedback { margin-bottom: 14px; padding: 10px 14px; border-radius: 8px; background: #e8f5eb; color: #185b31; }
+#feedback.erro, #msg { color: #9f2030; }
+#feedback.erro { background: #fae9ec; }
+.tabela { overflow-x: auto; }
+table { width: 100%; text-align: left; border-collapse: collapse; }
+th, td { padding: 10px; border-bottom: 1px solid #e2e6ed; vertical-align: top; }
+td button { margin: 2px; min-height: 32px; padding: 3px 9px; }
+.editor { margin: auto; width: min(92vw, 740px); max-height: 90vh; overflow: auto; }
+.editor::backdrop { background: #11182780; }
+.confirmacao { width: min(92vw, 460px); box-shadow: 0 18px 48px #11182726; }
+.confirmacao h1 { margin-bottom: 12px; font-weight: 700; }
+.confirmacao p { overflow-wrap: anywhere; }
+.confirmacao strong { color: #111827; }
+#exclusao-aviso { margin-top: 8px; font-size: 14px; }
+.botao-excluir { background: #b52331; }
+.botao-excluir:hover { background: #901c27; }
+.editor fieldset { border: 1px solid #d7d7d7; padding: 12px; border-radius: 9px; }
+.editor fieldset label { display: flex; align-items: center; gap: 8px; }
+.editor input[type=checkbox] { width: auto; min-height: auto; margin: 5px 0; }
+#editor-erro { margin-top: 12px; color: #9f2030; }
+@media (max-width: 960px) { .campos-os { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 580px) { main { width: 94%; margin: 16px auto; } .campos, .campos-os { grid-template-columns: minmax(0, 1fr); } }

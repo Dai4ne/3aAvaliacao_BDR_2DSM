@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
-import { AppError } from '../utils/AppError';
+import { AppError } from './AppError';
 
 export function notFound(_req: Request, res: Response) {
   res.status(404).json({ erro: 'Rota não encontrada' });
@@ -16,6 +16,10 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
       erro: 'Dados inválidos',
       detalhes: err.issues.map((i) => ({ campo: i.path.join('.'), mensagem: i.message })),
     });
+  }
+
+  if ((err as { type?: string }).type === 'entity.too.large') {
+    return res.status(413).json({ erro: 'O tamanho da solicitação excede o limite permitido' });
   }
 
   const code = (err as { code?: string }).code;

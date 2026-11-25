@@ -1,11 +1,5 @@
 import 'dotenv/config';
 
-function required(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Variável de ambiente ${name} não definida (veja .env.example)`);
-  return value;
-}
-
 export const env = {
   port: Number(process.env.PORT ?? 3000),
   db: {
@@ -15,6 +9,4 @@ export const env = {
     password: process.env.DB_PASSWORD ?? '',
     database: process.env.DB_NAME ?? 'atividade_bdr_2dsm',
   },
-  jwtSecret: required('JWT_SECRET'),
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '8h',
 };

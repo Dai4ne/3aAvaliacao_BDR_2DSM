@@ -1,13 +1,22 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt, { SignOptions } from 'jsonwebtoken';
 import { RowDataPacket } from 'mysql2';
 import { z } from 'zod';
-import { pool } from '../../config/db';
-import { env } from '../../config/env';
-import { AppError } from '../../utils/AppError';
+import { pool } from '../db';
+import { authenticate, encerrarSessao, iniciarSessao } from '../auth';
+import { AppError } from '../AppError';
+import { buscarUsuario } from '../services/usuarios.service';
 
 export const authRouter = Router();
+
+authRouter.get('/me', authenticate, async (req, res) => {
+  res.json(await buscarUsuario(req.user!.id));
+});
+
+authRouter.post('/logout', (req, res) => {
+  encerrarSessao(req, res);
+  res.status(204).end();
+});
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -29,12 +38,9 @@ authRouter.post('/login', async (req, res) => {
     throw new AppError(401, 'E-mail ou senha inválidos');
   }
 
-  const token = jwt.sign({ id: user.id_usuario, cargo: user.cargo }, env.jwtSecret, {
-    expiresIn: env.jwtExpiresIn as SignOptions['expiresIn'],
-  });
+  iniciarSessao(req, res, { id: user.id_usuario, cargo: user.cargo });
 
   res.json({
-    token,
     usuario: {
       id_usuario: user.id_usuario,
       nome: user.nome,

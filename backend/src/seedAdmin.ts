@@ -3,7 +3,7 @@
  * Uso: npm run seed:admin -- email@altave.com.br SenhaForte123 "Nome do Admin"
  */
 import bcrypt from 'bcryptjs';
-import { pool } from '../config/db';
+import { pool } from './db';
 
 async function main() {
   const [email, senha, nome = 'Administrador'] = process.argv.slice(2);
