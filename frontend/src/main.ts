@@ -1,3 +1,4 @@
+// Controla a navegação, os formulários e as listas do sistema no navegador.
 import './style.css';
 import { api, login, type Usuario } from './api';
 
@@ -7,6 +8,7 @@ interface Time {
   departamento: string;
   responsavel_nome: string | null;
   total_membros: number;
+  total_os: number;
 }
 
 interface TimeDetalhado extends Time {
@@ -54,6 +56,8 @@ const feedback = porId('feedback');
 const formUsuarios = porId<HTMLFormElement>('form-usuarios');
 const formTimes = porId<HTMLFormElement>('form-times');
 const formOS = porId<HTMLFormElement>('form-os');
+const formFiltrosOS = porId<HTMLFormElement>('filtros-os');
+let filtrosOS = new URLSearchParams();
 const responsavel = porId<HTMLSelectElement>('responsavel');
 const membro = porId<HTMLSelectElement>('membro');
 const timeOS = porId<HTMLSelectElement>('time-os');
@@ -77,7 +81,7 @@ opcoes(formUsuarios.elements.namedItem('cargo') as HTMLSelectElement, 'Selecione
 opcoes(
   formTimes.elements.namedItem('departamento') as HTMLSelectElement,
   'Selecione uma equipe',
-  Object.entries(cargos).filter(([cargo]) => !['superusuario', 'gestor'].includes(cargo)).map(([, nome]) => [nome, nome]),
+  [['Produção', 'Produção'], ['Software', 'Software']],
 );
 
 function mensagem(texto: string, erro = false) {
@@ -86,6 +90,7 @@ function mensagem(texto: string, erro = false) {
   feedback.classList.toggle('erro', erro);
 }
 
+// Mostra o responsável e permite remover os demais membros selecionados.
 function mostrarMembros() {
   const idResponsavel = Number(responsavel.value);
   const lista = porId('membros');
@@ -121,6 +126,7 @@ membro.onchange = () => {
   mostrarMembros();
 };
 
+// Monta as tabelas das listas com cabeçalhos e ações.
 function tabela(colunas: string[], linhas: (string | HTMLElement)[][]) {
   const destino = porId('registros');
   destino.textContent = 'Nenhum registro encontrado.';
@@ -141,6 +147,7 @@ function tabela(colunas: string[], linhas: (string | HTMLElement)[][]) {
   destino.replaceChildren(tabela);
 }
 
+// Carrega os registros da tela atual quando a lista é aberta.
 async function listar(tipo: string, atual: () => boolean) {
   const rota = tipo.replace('lista-', '');
   const configuracao = {
@@ -153,6 +160,7 @@ async function listar(tipo: string, atual: () => boolean) {
   novo.href = '#' + rota;
   novo.textContent = configuracao[1];
   novo.hidden = rota === 'os' && !podeEncaminhar();
+  formFiltrosOS.hidden = rota !== 'os';
   const registros = porId('registros');
   registros.textContent = 'Carregando…';
   try {
@@ -166,13 +174,15 @@ async function listar(tipo: string, atual: () => boolean) {
       ]));
     } else if (rota === 'times') {
       const times = await api<Time[]>('/times');
-      if (atual()) tabela(['Time', 'Equipe', 'Responsável', 'Membros', 'Ações'], times.map((t) => [
-        t.nome_time, t.departamento, t.responsavel_nome ?? '—', String(t.total_membros),
+      if (atual()) tabela(['Time', 'Equipe', 'Responsável', 'Membros', 'Total de OS', 'Ações'], times.map((t) => [
+        t.nome_time, t.departamento, t.responsavel_nome ?? '—', String(t.total_membros), String(t.total_os),
         acoesRegistro('/times/' + t.id_time, t.nome_time, () => editarTime(t.id_time), true, () => consultarTime(t.id_time)),
       ]));
     } else {
-      const ordens = await api<Ordem[]>('/os');
-      if (atual()) tabela(['Título', 'Time', 'Pessoa responsável', 'Prazo', 'Prioridade', 'Status', 'Anexos', 'Ações'], ordens.map((o) => [
+      const [ordens, times] = await Promise.all([api<Ordem[]>('/os?' + filtrosOS), api<Time[]>('/times')]);
+      if (!atual()) return;
+      opcoes(porId('filtro-time'), 'Todos', times.map((t) => [t.id_time, t.nome_time]));
+      tabela(['Título', 'Time', 'Pessoa responsável', 'Prazo', 'Prioridade', 'Status', 'Anexos', 'Ações'], ordens.map((o) => [
         detalhesOS(o), o.time_nome, o.responsavel_nome ?? '—', o.data_limite.split('-').reverse().join('/'),
         selo(({ media: 'média', critica: 'crítica' } as Record<string, string>)[o.prioridade] ?? o.prioridade, 'prioridade', o.prioridade),
         selo(o.os_status === 'concluida' ? 'concluída' : o.os_status, 'status', o.os_status), botaoAnexos(o.os_id),
@@ -184,6 +194,28 @@ async function listar(tipo: string, atual: () => boolean) {
     throw err;
   }
 }
+
+// Só envia os filtros preenchidos. Limpar volta à consulta de todas as OS permitidas.
+formFiltrosOS.onsubmit = (event) => {
+  event.preventDefault();
+  const dados = new FormData(formFiltrosOS);
+  const inicio = String(dados.get('inicio') ?? '');
+  const fim = String(dados.get('fim') ?? '');
+  if (inicio && fim && inicio > fim) {
+    mensagem('O prazo inicial não pode ser posterior ao final.', true);
+    return;
+  }
+  filtrosOS = new URLSearchParams();
+  for (const [campo, valor] of dados) {
+    if (typeof valor === 'string' && valor) filtrosOS.set(campo, valor);
+  }
+  void abrirVista();
+};
+
+formFiltrosOS.onreset = () => {
+  filtrosOS = new URLSearchParams();
+  if (usuario) void abrirVista();
+};
 
 function selo(texto: string, tipo: 'status' | 'prioridade', valor: string) {
   const el = document.createElement('span');
@@ -204,6 +236,7 @@ function detalhesOS(ordem: Ordem) {
   return detalhes;
 }
 
+// Carrega os anexos sob demanda e transforma o conteúdo recebido em arquivo para download.
 function botaoAnexos(id: number) {
   const destino = document.createElement('div');
   const botao = document.createElement('button');
@@ -264,6 +297,7 @@ function mostrarPessoasOS() {
     .map((pessoa) => [pessoa.id_usuario, pessoa.nome]));
 }
 
+// Usa o endereço da página e o cargo para escolher a tela e carregar seus dados.
 async function abrirVista(limparMensagem = true) {
   if (!usuario) return;
   const versao = ++versaoVista;
@@ -308,6 +342,7 @@ async function abrirVista(limparMensagem = true) {
   }
 }
 
+// Alterna entre o login e a área autenticada, conforme a sessão do usuário.
 function iniciarSessao(conta: Usuario) {
   usuario = conta;
   porId('entrada').hidden = true;
@@ -323,6 +358,8 @@ function sair() {
   ++sessao;
   ++versaoVista;
   usuario = null;
+  formFiltrosOS.reset();
+  opcoes(porId('filtro-time'), 'Todos', []);
   porId('app').hidden = true;
   porId('entrada').hidden = false;
   history.replaceState(null, '', location.pathname + location.search);
@@ -360,6 +397,7 @@ window.addEventListener('sessao-expirada', () => {
   porId('msg').textContent = 'Sua sessão expirou. Entre novamente.';
 });
 
+// Centraliza o envio dos formulários, a exibição de erros e o bloqueio de envios repetidos.
 function aoEnviar(form: HTMLFormElement, enviar: (dados: FormData) => Promise<void>, login = false) {
   form.onsubmit = async (event) => {
     event.preventDefault();
@@ -400,6 +438,7 @@ function postar<T>(rota: string, corpo: object) {
   return api<T>(rota, { method: 'POST', body: JSON.stringify(corpo) });
 }
 
+// Cadastros enviados à API. O ID do time é opcional para novos usuários.
 aoEnviar(formUsuarios, async (dados) => {
   const ativa = sessao;
   await postar('/usuarios', {
@@ -412,6 +451,7 @@ aoEnviar(formUsuarios, async (dados) => {
   mensagem('Usuário cadastrado com sucesso.');
 });
 
+// O responsável também é incluído na lista de membros do novo time.
 aoEnviar(formTimes, async (dados) => {
   const ativa = sessao;
   const idResponsavel = Number(dados.get('responsavel_id'));
@@ -428,6 +468,7 @@ aoEnviar(formTimes, async (dados) => {
   if (!porId('times').hidden) await abrirVista(false);
 });
 
+// Converte o arquivo selecionado para o formato aceito pela API.
 function lerAnexo(arquivo: File): Promise<{ nome: string; conteudo: string }> {
   return new Promise((resolve, reject) => {
     const leitor = new FileReader();
@@ -476,6 +517,7 @@ document.querySelectorAll<HTMLButtonElement>('#perfis [data-email]').forEach((pe
     loginForm.requestSubmit();
   };
 });
+// Janelas usadas para consultar, editar e confirmar exclusões.
 const editor = porId<HTMLDialogElement>('editor');
 const confirmacaoExclusao = porId<HTMLDialogElement>('confirmar-exclusao');
 const editorForm = porId<HTMLFormElement>('editor-form');
@@ -508,6 +550,7 @@ function acao(texto: string, executar: () => Promise<void>) {
   return botao;
 }
 
+// Aguarda a escolha do usuário antes de permitir a exclusão.
 function confirmarExclusao(rota: string, nome: string) {
   const titulo = rota.startsWith('/usuarios/') ? 'Excluir usuário'
     : rota.startsWith('/times/') ? 'Excluir time' : 'Excluir ordem de serviço';
@@ -599,6 +642,7 @@ async function consultarUsuario(id: number, nomesTimes: Map<number, string>) {
   abrirEditor(conta.nome, detalhes);
 }
 
+// Carrega o usuário e permite alterar a senha deixando a senha atual fora do formulário.
 async function editarUsuario(id: number, times: Time[]) {
   const rota = '/usuarios/' + id;
   const conta = await api<Usuario>(rota);
@@ -632,6 +676,7 @@ async function consultarTime(id: number) {
   abrirEditor(time.nome_time, [informacoes]);
 }
 
+// Mantém a lista de candidatos a responsável sincronizada com os membros selecionados.
 async function editarTime(id: number) {
   const rota = '/times/' + id;
   const [time, pessoas] = await Promise.all([api<TimeDetalhado>(rota), api<Usuario[]>('/usuarios')]);
@@ -684,6 +729,7 @@ function podeEditarOS(os: Ordem) {
   return podeGerirOrdem(os) || usuario?.time_id === os.id_time_responsavel;
 }
 
+// Exibe os campos de edição da OS conforme o acesso de quem está logado.
 async function editarOrdem(id: number) {
   const rota = '/os/' + id;
   const os = await api<Ordem>(rota);

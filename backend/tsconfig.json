@@ -1,3 +1,4 @@
+// Configura a compilação do backend de src para dist.
 {
   "compilerOptions": {
     "target": "ES2022",

@@ -1,3 +1,4 @@
+// Verifica a conexão com o banco antes de iniciar o servidor HTTP.
 import { pool } from './db';
 import { env } from './env';
 import { app } from './app';

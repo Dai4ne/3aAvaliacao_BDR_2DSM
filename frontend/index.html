@@ -10,6 +10,7 @@
   </head>
   <body>
     <main>
+      <!-- Tela de entrada com o formulário de login. -->
       <section id="entrada" class="entrada">
         <div class="marca">
           <p class="logo">Altave OS</p>
@@ -50,6 +51,7 @@
         </div>
       </section>
 
+      <!-- Área autenticada com navegação e formulários. -->
       <section id="app" hidden>
         <nav aria-label="Cadastros">
           <strong class="logo">Altave OS</strong>
@@ -62,6 +64,7 @@
 
         <p id="feedback" role="status" hidden></p>
 
+        <!-- Cadastro de usuários, com vínculo opcional a um time. -->
         <section id="usuarios" class="cartao" hidden>
           <h1>Novo usuário</h1>
           <form id="form-usuarios">
@@ -82,6 +85,7 @@
           </form>
         </section>
 
+        <!-- Cadastro de times, responsáveis e membros. -->
         <section id="times" class="cartao" hidden>
           <h1>Novo time</h1>
           <form id="form-times">
@@ -99,6 +103,7 @@
           </form>
         </section>
 
+        <!-- Solicitação de OS, com time executor e anexos opcionais. -->
         <section id="os" class="cartao cartao-os" hidden>
           <header>
             <div><h1>Nova ordem de serviço</h1><p>Abra uma solicitação para o time responsável.</p></div>
@@ -123,15 +128,38 @@
           </form>
         </section>
 
+        <!-- Estrutura compartilhada pelas listas de usuários, times e OS. -->
         <section id="lista" class="cartao cartao-lista" hidden>
           <header class="cabecalho-lista">
             <h1 id="titulo-lista"></h1>
             <a id="novo-registro" class="botao" href="#os">Novo cadastro</a>
           </header>
+          <!-- Campos vazios não limitam a consulta de ordens de serviço. -->
+          <form id="filtros-os" class="filtros-os" aria-label="Filtros de ordens de serviço" hidden>
+            <label>Time<select name="time_id" id="filtro-time"><option value="">Todos</option></select></label>
+            <label>Status<select name="status">
+              <option value="">Todos</option>
+              <option value="aberta">Aberta</option><option value="em andamento">Em andamento</option>
+              <option value="concluida">Concluída</option><option value="teste">Teste</option>
+              <option value="bloqueado">Bloqueado</option><option value="review">Review</option>
+            </select></label>
+            <label>Prioridade<select name="prioridade">
+              <option value="">Todas</option>
+              <option value="baixa">Baixa</option><option value="media">Média</option>
+              <option value="alta">Alta</option><option value="critica">Crítica</option>
+            </select></label>
+            <label>Prazo de<input type="date" name="inicio" /></label>
+            <label>Prazo até<input type="date" name="fim" /></label>
+            <div class="filtros-acoes">
+              <button type="submit">Filtrar</button>
+              <button type="reset" class="secundario">Limpar</button>
+            </div>
+          </form>
           <div class="tabela" id="registros"></div>
         </section>
       </section>
     </main>
+    <!-- Janela reutilizada para consultar e editar registros. -->
     <dialog id="editor" class="cartao editor" aria-labelledby="editor-titulo">
       <h1 id="editor-titulo"></h1>
       <form id="editor-form">
@@ -143,6 +171,7 @@
         </div>
       </form>
     </dialog>
+    <!-- Confirmação de exclusão com o nome do registro selecionado. -->
     <dialog id="confirmar-exclusao" class="cartao editor confirmacao" aria-labelledby="exclusao-titulo" aria-describedby="exclusao-mensagem exclusao-aviso">
       <h1 id="exclusao-titulo"></h1>
       <p id="exclusao-mensagem">Você está prestes a excluir <strong id="exclusao-registro"></strong>.</p>

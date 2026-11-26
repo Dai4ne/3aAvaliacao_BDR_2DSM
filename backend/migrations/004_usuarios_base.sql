@@ -1,3 +1,4 @@
+-- Insere as contas iniciais e vincula Produção e Software aos respectivos times.
 USE atividade_bdr_2dsm;
 
 START TRANSACTION;

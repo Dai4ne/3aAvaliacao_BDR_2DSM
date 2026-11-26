@@ -1,3 +1,4 @@
+-- Adiciona à OS a pessoa responsável pelo acompanhamento, além do time executor.
 USE atividade_bdr_2dsm;
 
 ALTER TABLE os

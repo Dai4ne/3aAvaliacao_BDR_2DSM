@@ -10,6 +10,7 @@ CREATE DATABASE IF NOT EXISTS atividade_bdr_2dsm
 
 USE atividade_bdr_2dsm;
 
+-- O usuário pode ser cadastrado antes de receber um time.
 CREATE TABLE usuario (
   id_usuario INT PRIMARY KEY AUTO_INCREMENT,
   nome       VARCHAR(100) NOT NULL,
@@ -44,6 +45,7 @@ ALTER TABLE usuario
   FOREIGN KEY (time_id) REFERENCES `time`(id_time)
   ON DELETE SET NULL;
 
+-- A OS registra o criador e o time que vai executar o serviço.
 CREATE TABLE os (
   os_id               INT PRIMARY KEY AUTO_INCREMENT,
   os_titulo           VARCHAR(150) NOT NULL,
@@ -67,6 +69,7 @@ CREATE TABLE os (
     FOREIGN KEY (id_time_responsavel) REFERENCES `time`(id_time)
 ) ENGINE=InnoDB;
 
+-- Os anexos são excluídos quando a ordem de serviço é apagada.
 CREATE TABLE IF NOT EXISTS os_anexo (
   id_anexo INT PRIMARY KEY AUTO_INCREMENT,
   os_id    INT NOT NULL,

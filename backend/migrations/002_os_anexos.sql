@@ -1,3 +1,4 @@
+-- Cria a tabela que armazena os arquivos anexados às ordens de serviço.
 USE atividade_bdr_2dsm;
 
 CREATE TABLE IF NOT EXISTS os_anexo (

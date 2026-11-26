@@ -1,3 +1,4 @@
+// Rotas de login, consulta da sessão atual e logout.
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { RowDataPacket } from 'mysql2';

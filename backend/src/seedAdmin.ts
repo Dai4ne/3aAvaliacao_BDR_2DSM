@@ -1,5 +1,5 @@
 /**
- * Cria o primeiro superusuário (necessário para logar e cadastrar os demais).
+ * Cria uma conta de superusuário pelo terminal.
  * Uso: npm run seed:admin -- email@altave.com.br SenhaForte123 "Nome do Admin"
  */
 import bcrypt from 'bcryptjs';

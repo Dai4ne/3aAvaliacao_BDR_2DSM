@@ -1,3 +1,4 @@
+// Rotas de times, vínculos de membros e troca de responsável.
 import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate, requireCargo } from '../auth';
@@ -21,6 +22,7 @@ const criarSchema = z.object({
   responsavel_id: z.number().int().positive().optional(),
 });
 
+// A edição de vínculos envia a lista de membros junto com o responsável.
 const atualizarSchema = z.object({
   nome_time: z.string().min(2).max(100).optional(),
   email_time: z.string().email().max(150).nullable().optional(),

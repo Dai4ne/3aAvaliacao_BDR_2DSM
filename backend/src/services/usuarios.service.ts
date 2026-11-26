@@ -1,9 +1,11 @@
+// Consultas SQL de usuários, tratamento de senhas e proteção dos vínculos com times.
 import bcrypt from 'bcryptjs';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../db';
 import { AppError } from '../AppError';
 import type { Cargo } from '../express';
 
+// A senha nunca faz parte dos dados retornados pela API.
 const SAFE_COLUMNS = 'id_usuario, nome, email, cargo, time_id';
 
 export interface NovoUsuario {
@@ -51,6 +53,7 @@ export async function buscarUsuario(id: number) {
   return rows[0];
 }
 
+// Aplica hash apenas se houver nova senha e protege o vínculo do líder com seu time.
 export async function atualizarUsuario(id: number, data: Partial<NovoUsuario>) {
   const entries = Object.entries(data).filter(([, v]) => v !== undefined);
   if (!entries.length) throw new AppError(400, 'Nenhum campo para atualizar');
@@ -69,6 +72,7 @@ export async function atualizarUsuario(id: number, data: Partial<NovoUsuario>) {
   return buscarUsuario(id);
 }
 
+// Impede excluir o líder antes de indicar outro responsável pelo time.
 export async function removerUsuario(id: number) {
   const [result] = await pool.execute<ResultSetHeader>(
     'DELETE FROM usuario WHERE id_usuario = ? AND NOT EXISTS (SELECT 1 FROM `time` WHERE responsavel_id = ?)',

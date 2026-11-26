@@ -1,3 +1,4 @@
+// Define os cargos e adiciona o usuário autenticado ao tipo de requisição do Express.
 export type Cargo =
   | 'superusuario'
   | 'gestor'

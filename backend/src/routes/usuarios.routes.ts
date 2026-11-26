@@ -1,3 +1,4 @@
+// Rotas de cadastro, consulta, edição e exclusão de usuários.
 import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate, requireCargo } from '../auth';
@@ -6,6 +7,7 @@ import * as service from '../services/usuarios.service';
 export const usuariosRouter = Router();
 usuariosRouter.use(authenticate);
 
+// O catálogo completo atende registros antigos. O cadastro oferece quatro cargos.
 const CARGOS = [
   'superusuario',
   'gestor',

@@ -1,3 +1,4 @@
+// Configura a checagem de tipos do arquivo vite.config.ts.
 {
   "compilerOptions": {
     "target": "ES2022",

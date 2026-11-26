@@ -4,7 +4,9 @@ COMO RODAR O PROJETO (Altave OS)
    npm run install:all
 
 2. Banco de dados:
-   mysql -u root -p < script.sql
+   mysql -u root -p < DDL-DML/script.sql
+   mysql -u root -p < backend/migrations/005_time_responsavel_e_total_os.sql
+   mysql -u root -p < backend/migrations/006_listar_os_com_filtros.sql
 
 3. Variáveis de ambiente:
    backend/.env.example  -> copiar para backend/.env  (configuração do MySQL)

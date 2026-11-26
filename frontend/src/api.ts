@@ -1,3 +1,4 @@
+// Faz as requisições à API, envia o cookie de sessão e trata erros HTTP.
 const API_URL = import.meta.env.VITE_API_URL ?? `${location.protocol}//${location.hostname}:3000`;
 
 export interface Usuario {

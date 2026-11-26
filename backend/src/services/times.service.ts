@@ -1,5 +1,6 @@
+// Consultas SQL de times e regras para manter responsáveis e membros vinculados.
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { pool } from '../db';
+import { pool, rotinaAusente } from '../db';
 import { AppError } from '../AppError';
 
 export interface NovoTime {
@@ -52,19 +53,33 @@ export async function criarTime(data: NovoTime) {
   }
 }
 
+// Mostra a quantidade de membros e chama a função SQL que conta as OS do time.
 export async function listarTimes() {
-  const [rows] = await pool.query<RowDataPacket[]>(
+  const consulta = (contagemOS: string) =>
     `SELECT t.id_time, t.nome_time, t.email_time, t.departamento, t.responsavel_id,
-            r.nome AS responsavel_nome, COUNT(u.id_usuario) AS total_membros
+            r.nome AS responsavel_nome, COUNT(u.id_usuario) AS total_membros,
+            ${contagemOS} AS total_os
        FROM \`time\` t
        LEFT JOIN usuario r ON r.id_usuario = t.responsavel_id
        LEFT JOIN usuario u ON u.time_id = t.id_time
       GROUP BY t.id_time, r.nome
-      ORDER BY t.nome_time`,
+      ORDER BY t.nome_time`;
+
+  try {
+    const [rows] = await pool.query<RowDataPacket[]>(consulta('fn_total_os_time(t.id_time)'));
+    return rows;
+  } catch (erro) {
+    if (!rotinaAusente(erro)) throw erro;
+  }
+
+  // A contagem continua disponível antes da instalação da função pela migração 005.
+  const [rows] = await pool.query<RowDataPacket[]>(
+    consulta('(SELECT COUNT(*) FROM os WHERE id_time_responsavel = t.id_time)'),
   );
   return rows;
 }
 
+// Carrega o time e consulta seus membros separadamente.
 export async function buscarTime(id: number) {
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT t.id_time, t.nome_time, t.email_time, t.departamento, t.responsavel_id,
@@ -84,6 +99,7 @@ export async function buscarTime(id: number) {
   return { ...time, membros: membros as RowDataPacket[] };
 }
 
+// Altera a equipe e os vínculos juntos para manter um responsável entre os membros.
 export async function atualizarTime(
   id: number,
   data: Partial<NovoTime>,
@@ -124,6 +140,7 @@ export async function atualizarTime(
   return buscarTime(id);
 }
 
+// O banco impede a exclusão de times ainda vinculados a ordens de serviço.
 export async function removerTime(id: number) {
   const [result] = await pool.execute<ResultSetHeader>('DELETE FROM `time` WHERE id_time = ?', [id]);
   if (!result.affectedRows) throw new AppError(404, 'Time não encontrado');

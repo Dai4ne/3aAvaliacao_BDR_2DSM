@@ -1,6 +1,8 @@
+// Valida os dados recebidos pelas rotas de ordens de serviço e anexos.
 import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate, requireCargo } from '../auth';
+import { AppError } from '../AppError';
 import * as service from '../services/os.service';
 
 export const osRouter = Router();
@@ -11,6 +13,7 @@ const PRIORIDADE = ['baixa', 'media', 'alta', 'critica'] as const;
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 const data = z.string().date();
+// Limita o total de anexos e valida o conteúdo em Base64.
 const tamanhoMaximoAnexos = 2 * 1024 * 1024;
 const anexos = z.array(z.object({
   nome: z.string().min(1).max(255),
@@ -21,6 +24,7 @@ const anexos = z.array(z.object({
   'Os anexos devem somar no máximo 2 MB',
 );
 
+// A criação exige os dados da solicitação. Na edição, os campos são opcionais.
 const criarSchema = z.object({
   os_titulo: z.string().trim().min(3).max(150),
   os_descricao: z.string().trim().min(1).refine((texto) => Buffer.byteLength(texto, 'utf8') <= 65535),
@@ -45,11 +49,17 @@ const listarSchema = z.object({
   status: z.enum(STATUS).optional(),
   prioridade: z.enum(PRIORIDADE).optional(),
   time_id: z.coerce.number().int().positive().optional(),
+  inicio: data.optional(),
+  fim: data.optional(),
 });
 
-// GET /os?status=aberta&time_id=1&prioridade=alta
+// GET /os?status=aberta&time_id=1&prioridade=alta&inicio=2026-11-01&fim=2026-11-30
 osRouter.get('/', async (req, res) => {
-  res.json(await service.listarOS(req.user!, listarSchema.parse(req.query)));
+  const filtros = listarSchema.parse(req.query);
+  if (filtros.inicio && filtros.fim && filtros.inicio > filtros.fim) {
+    throw new AppError(400, 'O prazo inicial não pode ser posterior ao final');
+  }
+  res.json(await service.listarOS(req.user!, filtros));
 });
 
 osRouter.get('/:id', async (req, res) => {

@@ -1,6 +1,7 @@
+// Consultas SQL e regras de acesso, encaminhamento e conclusão de ordens de serviço.
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import type { PoolConnection } from 'mysql2/promise';
-import { pool } from '../db';
+import type { PoolConnection, ProcedureCallPacket } from 'mysql2/promise';
+import { pool, rotinaAusente } from '../db';
 import { AppError } from '../AppError';
 import type { AuthUser } from '../express';
 
@@ -24,6 +25,7 @@ export interface EdicaoOS {
   id_usuario_responsavel?: number | null;
 }
 
+// Consulta base que reúne a OS, o time executor, o criador e a pessoa responsável.
 const SELECT_OS = `
   SELECT o.os_id, o.os_titulo, o.os_descricao, o.os_status, o.prioridade,
          o.data_limite, o.data_criacao, o.id_criador, o.id_time_responsavel,
@@ -49,6 +51,7 @@ function recebeOS(user: AuthUser) {
   return user.cargo === 'producao' || user.cargo === 'software';
 }
 
+// Produção e Software consultam as OS destinadas à sua pessoa ou ao seu time.
 export async function buscarOS(user: AuthUser, id: number) {
   const os = await buscarOuFalhar(id);
   if (recebeOS(user)) {
@@ -60,6 +63,7 @@ export async function buscarOS(user: AuthUser, id: number) {
   return os;
 }
 
+// Quando preenchida, a pessoa responsável pela OS deve ser do Comercial.
 async function validarResponsavel(
   conn: PoolConnection, user: AuthUser, usuarioId: number | null,
 ) {
@@ -114,6 +118,7 @@ export async function criarOS(user: AuthUser, data: NovaOS) {
       ],
     );
     id = result.insertId;
+    // Os anexos são gravados na mesma transação da OS.
     for (const anexo of data.anexos ?? []) {
       await conn.execute('INSERT INTO os_anexo (os_id, nome, conteudo) VALUES (?, ?, ?)', [
         id, anexo.nome, Buffer.from(anexo.conteudo, 'base64'),
@@ -149,35 +154,55 @@ export async function buscarAnexo(user: AuthUser, osId: number, anexoId: number)
   return { ...anexo, conteudo: (anexo.conteudo as Buffer).toString('base64') };
 }
 
-export async function listarOS(user: AuthUser, filtros: { status?: string; time_id?: number; prioridade?: string }) {
-  const where: string[] = [];
-  const params: unknown[] = [];
-  if (recebeOS(user)) {
-    where.push(`(o.id_usuario_responsavel = ? OR
-      ((o.id_usuario_responsavel IS NULL OR r.cargo = 'comercial') AND o.id_time_responsavel = ?))`);
-    params.push(user.id, await timeDoUsuario(user.id));
+// Aplica os filtros solicitados e mantém a visibilidade de cada perfil.
+export async function listarOS(user: AuthUser, filtros: {
+  status?: string;
+  time_id?: number;
+  prioridade?: string;
+  inicio?: string;
+  fim?: string;
+}) {
+  const argumentos = [
+    filtros.time_id ?? null,
+    filtros.status ?? null,
+    filtros.inicio ?? null,
+    filtros.fim ?? null,
+    filtros.prioridade ?? null,
+    recebeOS(user) ? user.id : null,
+  ] as const;
+  try {
+    const [[rows]] = await pool.execute<ProcedureCallPacket<RowDataPacket[]>>(
+      'CALL sp_listar_os_app(?, ?, ?, ?, ?, ?)', [...argumentos],
+    );
+    return rows;
+  } catch (erro) {
+    if (!rotinaAusente(erro)) throw erro;
   }
 
-  if (filtros.status) {
-    where.push('o.os_status = ?');
-    params.push(filtros.status);
-  }
-  if (filtros.time_id) {
-    where.push('o.id_time_responsavel = ?');
-    params.push(filtros.time_id);
-  }
-  if (filtros.prioridade) {
-    where.push('o.prioridade = ?');
-    params.push(filtros.prioridade);
-  }
-
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `${SELECT_OS} ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY o.data_limite ASC`,
-    params,
+  // Bancos ainda sem a migração 006 usam os mesmos filtros e regras de acesso.
+  const [time, status, inicio, fim, prioridade, usuarioRestrito] = argumentos;
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    `${SELECT_OS}
+    WHERE (? IS NULL OR o.id_time_responsavel = ?)
+      AND (? IS NULL OR o.os_status = ?)
+      AND (? IS NULL OR o.data_limite >= ?)
+      AND (? IS NULL OR o.data_limite <= ?)
+      AND (? IS NULL OR o.prioridade = ?)
+      AND (
+        ? IS NULL OR o.id_usuario_responsavel = ?
+        OR (
+          (o.id_usuario_responsavel IS NULL OR r.cargo = 'comercial')
+          AND o.id_time_responsavel = (SELECT time_id FROM usuario WHERE id_usuario = ?)
+        )
+      )
+    ORDER BY o.data_limite, o.os_id`,
+    [time, time, status, status, inicio, inicio, fim, fim, prioridade, prioridade,
+      usuarioRestrito, usuarioRestrito, usuarioRestrito],
   );
   return rows;
 }
 
+// Verifica quem pode alterar o destino da ordem e quem pode concluir ou reabrir.
 export async function editarOS(user: AuthUser, id: number, data: EdicaoOS) {
   const os = await buscarOS(user, id);
   const entries = Object.entries(data).filter(([, v]) => v !== undefined);
@@ -232,6 +257,7 @@ export async function concluirOS(user: AuthUser, id: number) {
   return buscarOuFalhar(id);
 }
 
+// A chave estrangeira remove os anexos quando a OS é excluída.
 export async function removerOS(user: AuthUser, id: number) {
   const os = await buscarOS(user, id);
   if (!ehGestao(user) && !(user.cargo === 'comercial' && os.id_criador === user.id)) {

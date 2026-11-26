@@ -1,7 +1,7 @@
--- VIEW PARA DETALHES DE OS
+-- Objetos SQL da avaliação, começando pela view que reúne os detalhes das OS.
 USE atividade_bdr_2dsm;
 
-CREATE VIEW vw_os_detalhada AS
+CREATE OR REPLACE VIEW vw_os_detalhada AS
 SELECT
     o.os_id,
     o.os_titulo,
@@ -13,7 +13,12 @@ SELECT
     t.nome_time,
     t.departamento,
     c.nome AS criador,
-    r.nome AS pessoa_responsavel
+    r.nome AS pessoa_responsavel,
+    o.os_descricao,
+    o.id_criador,
+    o.id_usuario_responsavel,
+    r.cargo AS responsavel_cargo,
+    t.responsavel_id AS id_lider_time
 FROM os AS o
 INNER JOIN `time` AS t ON t.id_time = o.id_time_responsavel
 INNER JOIN usuario AS c ON c.id_usuario = o.id_criador
@@ -142,7 +147,7 @@ BEGIN
 END$$
 
 -- 4. Listar OS com filtros opcionais
-CREATE PROCEDURE sp_listar_os(
+CREATE PROCEDURE IF NOT EXISTS sp_listar_os(
     IN p_time_id INT,
     IN p_status VARCHAR(20),
     IN p_inicio DATE,
@@ -154,7 +159,8 @@ BEGIN
             SET MESSAGE_TEXT = 'A data inicial não pode ser posterior à final';
     END IF;
 
-    SELECT *
+    SELECT os_id, os_titulo, os_status, prioridade, data_limite, data_criacao,
+           id_time, nome_time, departamento, criador, pessoa_responsavel
     FROM vw_os_detalhada
     WHERE (p_time_id IS NULL OR id_time = p_time_id)
       AND (p_status IS NULL OR os_status = p_status)
@@ -244,7 +250,7 @@ DELIMITER ;
 DELIMITER $$
 
 -- 1. Total de OS do time
-CREATE FUNCTION fn_total_os_time(p_time_id INT)
+CREATE FUNCTION IF NOT EXISTS fn_total_os_time(p_time_id INT)
 RETURNS BIGINT
 READS SQL DATA
 BEGIN
@@ -363,7 +369,7 @@ BEGIN
 END$$
 
 -- 3. Exigir responsável na criação de um time
-CREATE TRIGGER trg_time_bi_exigir_responsavel
+CREATE TRIGGER IF NOT EXISTS trg_time_bi_exigir_responsavel
 BEFORE INSERT ON time
 FOR EACH ROW
 BEGIN

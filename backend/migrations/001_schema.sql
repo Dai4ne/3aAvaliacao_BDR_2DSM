@@ -10,6 +10,7 @@ CREATE DATABASE IF NOT EXISTS atividade_bdr_2dsm
 
 USE atividade_bdr_2dsm;
 
+-- O usuário pode ser cadastrado antes de receber um time.
 CREATE TABLE usuario (
   id_usuario INT PRIMARY KEY AUTO_INCREMENT,
   nome       VARCHAR(100) NOT NULL,
@@ -44,6 +45,7 @@ ALTER TABLE usuario
   FOREIGN KEY (time_id) REFERENCES `time`(id_time)
   ON DELETE SET NULL;
 
+-- Cada ordem precisa de um criador e de um time executor.
 CREATE TABLE os (
   os_id               INT PRIMARY KEY AUTO_INCREMENT,
   os_titulo           VARCHAR(150) NOT NULL,

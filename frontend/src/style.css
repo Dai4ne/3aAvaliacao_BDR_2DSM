@@ -1,3 +1,4 @@
+/* Estilos das telas, formulários, tabelas e diálogos do Altave OS. */
 @import 'tailwindcss';
 
 /* ------------------------------------------------------------
@@ -375,3 +376,7 @@ details p { max-width: 52ch; margin: 8px 0 0; font-size: 14px; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+/* Filtros da lista de ordens de serviço. */
+.filtros-os { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 20px; }
+.filtros-os label { flex: 1 1 130px; min-width: 0; }
+.filtros-acoes { display: flex; flex-wrap: wrap; gap: 8px; }

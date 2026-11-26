@@ -1,3 +1,4 @@
+// Gerencia sessões por cookie e verifica o cargo antes de liberar ações.
 import { randomBytes } from 'node:crypto';
 import { NextFunction, Request, Response } from 'express';
 import type { RowDataPacket } from 'mysql2';
@@ -7,6 +8,7 @@ import type { AuthUser, Cargo } from './express';
 
 const nomeCookie = 'altave_sessao';
 const duracao = 8 * 60 * 60 * 1000;
+// Uma sessão guarda o ID do usuário e o horário de expiração em memória.
 const sessoes = new Map<string, { usuarioId: number; expiraEm: number }>();
 
 function idSessao(req: Request) {
@@ -33,6 +35,7 @@ export function encerrarSessao(req: Request, res: Response) {
   res.clearCookie(nomeCookie, opcoesCookie(req));
 }
 
+// Consulta o cargo atual no banco em cada requisição autenticada.
 export async function authenticate(req: Request, _res: Response, next: NextFunction) {
   const id = idSessao(req) ?? '';
   const sessao = sessoes.get(id);

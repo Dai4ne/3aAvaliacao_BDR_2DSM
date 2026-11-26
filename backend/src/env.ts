@@ -1,3 +1,4 @@
+// Lê o .env e reúne as configurações do servidor e do banco.
 import 'dotenv/config';
 
 export const env = {

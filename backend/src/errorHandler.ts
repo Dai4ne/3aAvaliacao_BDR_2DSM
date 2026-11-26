@@ -1,3 +1,4 @@
+// Converte erros de validação, do banco e da aplicação em respostas HTTP.
 import { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from './AppError';

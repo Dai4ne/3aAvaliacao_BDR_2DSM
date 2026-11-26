@@ -19,6 +19,24 @@ script.sql       DDL completo para uma instalação nova
 instrucoes.txt   passo a passo para rodar
 ```
 
+## Arquivos de apoio
+
+| Arquivo | Para que serve |
+|---|---|
+| `package.json` | Comandos para instalar, compilar e iniciar o projeto a partir da raiz. |
+| `backend/package.json` | Dependências e comandos da API Express. |
+| `frontend/package.json` | Dependências e comandos da interface com Vite. |
+| `backend/package-lock.json` e `frontend/package-lock.json` | Versões exatas das dependências instaladas em cada parte do projeto. |
+| `frontend/.prettierrc` | Preferências de formatação do código do frontend. |
+| `DDL-DML/script.sql` | Cria as tabelas, os vínculos e as contas iniciais. |
+| `DDL-DML/dml_dados.sql` | Popula as tabelas com dados fictícios para demonstração. |
+| `DDL-DML/script2.sql` | Reúne a view, as procedures, as functions e os triggers da avaliação. |
+| `modelo_conceitual.pdf` | Representa as entidades e seus relacionamentos. |
+| `modelo_logico.pdf` | Mostra a estrutura lógica das tabelas, com chaves primárias e estrangeiras. |
+| `docs/usuarios_login.md` | Lista as contas fictícias e os cargos disponíveis para demonstração. |
+
+Os arquivos `.gitkeep` registram no Git diretórios de documentação e imagens que podem ficar vazios.
+
 ## Como rodar
 
 Veja `instrucoes.txt`. Se o banco já existe, aplique as migrações pendentes em
@@ -26,7 +44,9 @@ Veja `instrucoes.txt`. Se o banco já existe, aplique as migrações pendentes e
 
 ```bash
 npm run install:all
-mysql -u root -p < script.sql
+mysql -u root -p < DDL-DML/script.sql
+mysql -u root -p < backend/migrations/005_time_responsavel_e_total_os.sql
+mysql -u root -p < backend/migrations/006_listar_os_com_filtros.sql
 # copiar backend/.env.example -> backend/.env e frontend/.env.example -> frontend/.env
 npm run dev:backend    # http://localhost:3000
 npm run dev:frontend   # http://localhost:5173
@@ -56,6 +76,13 @@ sem time. Produção e Software começam como responsáveis dos respectivos time
 | A pessoa responsável pela OS precisa ter cargo Comercial. O time vinculado indica quem vai executar o serviço. | `os.service.ts > validarResponsavel` |
 | Produção e Software veem as novas OS pelo time vinculado e mantêm acesso às atribuições individuais anteriores | `listarOS`, `buscarOS` |
 | Gestor e líder autorizado do time podem concluir ou reabrir uma OS | `editarOS`, `concluirOS` |
+
+O trigger `trg_time_bi_exigir_responsavel` impede o cadastro de um time sem responsável.
+A lista de times usa `fn_total_os_time` para mostrar a quantidade de OS vinculadas a cada time.
+
+Na lista de OS, é possível filtrar por time, status, prioridade e intervalo de prazo.
+No MySQL, `CALL sp_listar_os(NULL, 'aberta', NULL, NULL);` lista as OS abertas.
+A API usa `sp_listar_os_app`, que também aceita prioridade e respeita o acesso do usuário.
 
 ## Rotas da API
 

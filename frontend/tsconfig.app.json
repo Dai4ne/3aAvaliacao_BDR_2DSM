@@ -1,3 +1,4 @@
+// Configura a checagem de tipos do código que roda no navegador.
 {
   "compilerOptions": {
     "target": "ES2022",
